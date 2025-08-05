@@ -18,6 +18,7 @@ from .analyzer import CodeAnalyzer, ArchitectureAnalyzer
 from .planner import RefactorPlanner
 from .regression import RegressionDetector
 from .git_manager import GitWorkflowManager
+from .refactorings import RefactoringEngine
 
 
 class RefactorAgent:
@@ -45,6 +46,7 @@ class RefactorAgent:
         self.planner = RefactorPlanner()
         self.regression_detector = RegressionDetector()
         self.git_manager = GitWorkflowManager(repo_path)
+        self.refactoring_engine = RefactoringEngine(repo_path)
         
         # State tracking
         self.current_analysis = None
@@ -219,30 +221,22 @@ class RefactorAgent:
             )
     
     def _apply_refactoring(self, step, dry_run: bool) -> List[CodeChange]:
-        """Apply refactoring changes (simulated for now)."""
-        changes = []
+        """Apply refactoring changes using the refactoring engine."""
+        if dry_run:
+            # In dry run mode, simulate changes
+            changes = []
+            for file_path in step.target_files[:3]:  # Limit for simulation
+                changes.append(CodeChange(
+                    file_path=file_path,
+                    change_type="modify",
+                    diff=f"--- a/{file_path}\n+++ b/{file_path}\n@@ -1,3 +1,3 @@\n-old code\n+new refactored code\n",
+                    line_changes={"added": 10, "removed": 5},
+                    semantic_changes=[f"Refactored according to {step.type.value}"]
+                ))
+            return changes
         
-        # In a real implementation, this would:
-        # 1. Parse the target files
-        # 2. Apply the refactoring transformation
-        # 3. Write the changes back
-        # 4. Return the list of changes made
-        
-        # For now, simulate some changes
-        for file_path in step.target_files[:3]:  # Limit for simulation
-            if not dry_run:
-                # Would actually modify files here
-                pass
-            
-            changes.append(CodeChange(
-                file_path=file_path,
-                change_type="modify",
-                diff=f"--- a/{file_path}\n+++ b/{file_path}\n@@ -1,3 +1,3 @@\n-old code\n+new refactored code\n",
-                line_changes={"added": 10, "removed": 5},
-                semantic_changes=[f"Refactored according to {step.type.value}"]
-            ))
-        
-        return changes
+        # Use the refactoring engine to apply actual changes
+        return self.refactoring_engine.apply_refactoring(step)
     
     def _auto_detect_services(self) -> Dict[str, str]:
         """Auto-detect microservices in the repository."""
